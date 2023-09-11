@@ -46,7 +46,14 @@ class UserController {
 
   async getAllUsers(req: Request, res: Response, next: NextFunction) {
     try {
-      const users = await UserService.getAllUsers();
+      const { search, sort, limit, skip } = req.query;
+
+      const users = await UserService.getAllUsers({
+        search: search as string,
+        sort: sort as string,
+        limit: parseInt(limit as string, 10),
+        skip: parseInt(skip as string, 10),
+      });
 
       response(res, 200, {
         status: true,
@@ -60,9 +67,9 @@ class UserController {
 
   async getUserById(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.params.id;
 
-      const user = await UserService.getUserById(userId);
+      const user = await UserService.getUserById(+userId);
 
       response(res, 200, {
         status: true,
@@ -91,7 +98,7 @@ class UserController {
         role,
       };
 
-      const userId = parseInt(req.params.id);
+      const userId = +req.params.id;
 
       const user = await UserService.updateUser(userId, obj);
 
@@ -107,9 +114,9 @@ class UserController {
 
   async deleteUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.params.id;
 
-      await UserService.deleteUser(userId);
+      await UserService.deleteUser(+userId);
 
       response(res, 204, {
         status: true,
@@ -120,11 +127,11 @@ class UserController {
     }
   }
 
-  async getLoggedUser(req: CustomRequest, res: Response, next: NextFunction) {
+  async getLoggedUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = parseInt(req.userId!);
+      const userId = (req as CustomRequest).userId!;
 
-      const user = await UserService.getUserById(id);
+      const user = await UserService.getUserById(userId);
 
       response(res, 200, {
         status: true,
@@ -137,21 +144,21 @@ class UserController {
   }
 
   async updateLoggedUserPassword(
-    req: CustomRequest,
+    req: Request,
     res: Response,
     next: NextFunction,
   ) {
     try {
       const { oldPassword, newPassword } = req.body;
 
-      const id = parseInt(req.userId!);
+      const userId = (req as CustomRequest).userId!;
 
       const obj: UpdateLoggedUserPassword = {
         oldPassword,
         newPassword,
       };
 
-      const user = await UserService.updateLoggedUserPassword(id, obj);
+      const user = await UserService.updateLoggedUserPassword(userId, obj);
 
       const token = signToken({ id: user.id });
 
@@ -165,11 +172,7 @@ class UserController {
     }
   }
 
-  async updateLoggedUserData(
-    req: CustomRequest,
-    res: Response,
-    next: NextFunction,
-  ) {
+  async updateLoggedUserData(req: Request, res: Response, next: NextFunction) {
     try {
       const { fullname } = req.body;
 
@@ -177,13 +180,13 @@ class UserController {
         throw new Error('Fullname is required');
       }
 
-      const id = parseInt(req.userId!);
+      const userId = (req as CustomRequest).userId!;
 
       const obj: UpdateLoggedUserData = {
         fullname,
       };
 
-      const user = await UserService.updateLoggedUserData(id, obj);
+      const user = await UserService.updateLoggedUserData(userId, obj);
 
       const token = signToken({ id: user.id });
 
@@ -197,11 +200,11 @@ class UserController {
     }
   }
 
-  async deleteMe(req: CustomRequest, res: Response, next: NextFunction) {
+  async deleteMe(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = parseInt(req.userId!);
+      const userId = (req as CustomRequest).userId!;
 
-      await UserService.deleteMe(id);
+      await UserService.deleteMe(userId);
 
       response(res, 204, {
         status: true,

@@ -1,27 +1,20 @@
 import { PrismaClient } from '@prisma/client';
 import ApiError from '../utils/ApiError';
-import {
-  GetAllMineProducts,
-  createProduct,
-  updateProduct,
-} from '../interfaces/productInterface';
-import { error } from 'console';
+import { createProduct, updateProduct } from '../interfaces/productInterface';
 
 const prisma = new PrismaClient();
 
 class ProductService {
-  async createProduct(data: createProduct, userId: string) {
+  async createProduct(data: createProduct, userId: number) {
     try {
       const { title, price, imageUrl } = data;
 
       const product = await prisma.product.create({
         data: {
           title,
-          price,
+          price: +price,
           imageUrl,
-          user: {
-            connect: { id: +userId },
-          },
+          userId,
         },
       });
 
@@ -31,9 +24,39 @@ class ProductService {
     }
   }
 
-  async getAllProducts() {
+  async getAllProducts({
+    search,
+    sort,
+    limit,
+    skip,
+  }: {
+    search?: string;
+    sort?: string;
+    limit?: number;
+    skip?: number;
+  }) {
     try {
-      const products = await prisma.product.findMany();
+      const products = await prisma.product.findMany({
+        where: {
+          title: {
+            contains: search || undefined,
+          },
+        },
+        orderBy: {
+          [sort || 'createdAt']: 'desc',
+        },
+        take: limit || undefined,
+        skip: skip || undefined,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullname: true,
+              email: true,
+            },
+          },
+        },
+      });
 
       return products;
     } catch (error) {
@@ -41,13 +64,20 @@ class ProductService {
     }
   }
 
-  async getAllMineProducts(data: GetAllMineProducts) {
+  async getAllMineProducts(userId: number) {
     try {
-      const { userId } = data;
-
       const products = await prisma.product.findMany({
         where: {
           userId: +userId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullname: true,
+              email: true,
+            },
+          },
         },
       });
 
@@ -62,6 +92,15 @@ class ProductService {
       const product = await prisma.product.findUnique({
         where: {
           id: productId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullname: true,
+              email: true,
+            },
+          },
         },
       });
 
@@ -78,7 +117,7 @@ class ProductService {
     }
   }
 
-  async updateProduct(data: updateProduct, userId: string, productId: number) {
+  async updateProduct(data: updateProduct, userId: number, productId: number) {
     try {
       const product = await prisma.product.findUnique({
         where: { id: productId },
@@ -95,6 +134,12 @@ class ProductService {
 
       if (!user) {
         throw new ApiError(`There is no user with this id ${userId}`, 404);
+      }
+
+      const { price } = data;
+
+      if (price) {
+        data.price = +data.price!;
       }
 
       if (user.role === 'user') {
@@ -130,10 +175,10 @@ class ProductService {
     }
   }
 
-  async deleteProduct(userId: string, productId: number) {
+  async deleteProduct(userId: number, productId: number) {
     try {
       const product = await prisma.product.findUnique({
-        where: { id: productId },
+        where: { id: +productId },
       });
 
       if (!product) {
@@ -150,7 +195,7 @@ class ProductService {
       }
 
       if (user.role === 'user') {
-        if (product.userId !== +userId) {
+        if (+product.userId !== +userId) {
           throw new ApiError(
             'You are not allowed to do this action, you are not prodcut owner',
             403,
@@ -159,8 +204,7 @@ class ProductService {
 
         await prisma.product.delete({
           where: {
-            id: productId,
-            userId: +userId,
+            id: +productId,
           },
         });
       }
@@ -168,8 +212,7 @@ class ProductService {
       //todo) role -> admin
       await prisma.product.delete({
         where: {
-          id: productId,
-          userId: +userId,
+          id: +productId,
         },
       });
     } catch (error) {

@@ -37,9 +37,33 @@ class UserService {
     }
   }
 
-  async getAllUsers() {
+  async getAllUsers({
+    search,
+    sort,
+    limit,
+    skip,
+  }: {
+    search?: string;
+    sort?: string;
+    limit?: number;
+    skip?: number;
+  }) {
     try {
-      const users = await prisma.user.findMany();
+      const users = await prisma.user.findMany({
+        where: {
+          fullname: {
+            contains: search || undefined,
+          },
+        },
+        orderBy: {
+          [sort || 'createdAt']: 'asc',
+        },
+        take: limit || undefined,
+        skip: skip || undefined,
+        include: {
+          products: true,
+        },
+      });
 
       const sanitizedUsers = users.map((user) => sanitizedAdmin(user));
 
@@ -51,7 +75,12 @@ class UserService {
 
   async getUserById(id: number) {
     try {
-      const user = await prisma.user.findUnique({ where: { id } });
+      const user = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          products: true,
+        },
+      });
 
       if (!user) {
         throw new ApiError(`There is no user with this id ${id}`, 404);

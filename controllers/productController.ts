@@ -2,27 +2,26 @@ import { Request, Response, NextFunction } from 'express';
 import ProductService from '../services/productService';
 import CustomRequest from '../interfaces/customRequest';
 import response from '../utils/response';
-import {
-  GetAllMineProducts,
-  createProduct,
-  updateProduct,
-} from '../interfaces/productInterface';
+import { createProduct, updateProduct } from '../interfaces/productInterface';
 
 class ProductController {
-  async createProduct(
-    req: Request,
-    request: CustomRequest,
-    res: Response,
-    next: NextFunction,
-  ) {
+  async createProduct(req: Request, res: Response, next: NextFunction) {
     try {
       if (req.file) {
         req.body.imageUrl = req.file.path;
       }
 
-      const userId = request.userId;
+      const { title, price, imageUrl } = req.body;
 
-      const product = await ProductService.createProduct(req.body, `${userId}`);
+      const obj: createProduct = {
+        title,
+        price,
+        imageUrl,
+      };
+
+      const userId = (req as CustomRequest).userId!;
+
+      const product = await ProductService.createProduct(obj, +userId);
 
       response(res, 201, {
         status: true,
@@ -36,7 +35,14 @@ class ProductController {
 
   async getAllProducts(req: Request, res: Response, next: NextFunction) {
     try {
-      const products = await ProductService.getAllProducts();
+      const { search, sort, limit, skip } = req.query;
+
+      const products = await ProductService.getAllProducts({
+        search: search as string,
+        sort: sort as string,
+        limit: parseInt(limit as string, 10),
+        skip: parseInt(skip as string, 10),
+      });
 
       response(res, 200, {
         status: true,
@@ -48,20 +54,11 @@ class ProductController {
     }
   }
 
-  async getAllMineProducts(
-    req: Request,
-    request: CustomRequest,
-    res: Response,
-    next: NextFunction,
-  ) {
+  async getAllMineProducts(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = request.userId;
+      const userId = (req as CustomRequest).userId!;
 
-      const obj: GetAllMineProducts = {
-        userId: `${userId}`,
-      };
-
-      const products = await ProductService.getAllMineProducts(obj);
+      const products = await ProductService.getAllMineProducts(userId!);
 
       response(res, 200, {
         status: true,
@@ -75,9 +72,9 @@ class ProductController {
 
   async getProductById(req: Request, res: Response, next: NextFunction) {
     try {
-      const productId = parseInt(req.params.id);
+      const productId = req.params.id;
 
-      const product = await ProductService.getProductById(productId);
+      const product = await ProductService.getProductById(+productId);
 
       response(res, 200, {
         status: true,
@@ -89,16 +86,17 @@ class ProductController {
     }
   }
 
-  async updateProduct(
-    req: Request,
-    request: CustomRequest,
-    res: Response,
-    next: NextFunction,
-  ) {
+  async updateProduct(req: Request, res: Response, next: NextFunction) {
     try {
-      const productId = parseInt(req.params.id);
+      if (req.file) {
+        req.body.imageUrl = req.file.path;
+      }
+
+      const productId = req.params.id;
+
       const { title, imageUrl, price } = req.body;
-      const userId = request.userId;
+
+      const userId = (req as CustomRequest).userId!;
 
       const obj: updateProduct = {
         title,
@@ -108,8 +106,8 @@ class ProductController {
 
       const product = await ProductService.updateProduct(
         obj,
-        `${userId}`,
-        productId,
+        userId,
+        +productId,
       );
 
       response(res, 200, {
@@ -122,17 +120,13 @@ class ProductController {
     }
   }
 
-  async deleteProduct(
-    req: Request,
-    request: CustomRequest,
-    res: Response,
-    next: NextFunction,
-  ) {
+  async deleteProduct(req: Request, res: Response, next: NextFunction) {
     try {
-      const productId = parseInt(req.params.id);
-      const userId = request.userId;
+      const productId = +req.params.id;
 
-      await ProductService.deleteProduct(`${userId}`, productId);
+      const userId = (req as CustomRequest).userId!;
+
+      await ProductService.deleteProduct(+userId, +productId);
 
       response(res, 204, {
         status: true,

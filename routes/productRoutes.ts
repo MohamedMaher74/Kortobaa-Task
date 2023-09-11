@@ -44,7 +44,7 @@ router
   .route('/:id')
   .get(validateGetProduct(), validatorMiddleware, getProductById)
   .patch(
-    // upload.single('image'),
+    uploadToDiskStorage.single('imageUrl'),
     validateUpdateProduct(),
     validatorMiddleware,
     updateProduct,

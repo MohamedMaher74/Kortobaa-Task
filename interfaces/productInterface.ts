@@ -4,10 +4,6 @@ export interface createProduct {
   imageUrl?: string;
 }
 
-export interface GetAllMineProducts {
-  userId: string;
-}
-
 export interface updateProduct {
   title?: string;
   imageUrl?: string;
