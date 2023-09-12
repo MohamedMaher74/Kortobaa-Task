@@ -2,42 +2,6 @@
 
 #Postman Collection: https://documenter.getpostman.com/view/25838733/2s9YC2zYw1
 
-# Project Structure: 
-  ├── controllers/
-  │    ├── productController.ts
-  │    ├── userController.ts
-  │    └── authController.ts
-  ├── services/
-  │    ├── productService.ts
-  │    ├── userService.ts
-  │    └── authService.ts
-  ├── routes/
-  │    ├── productRoutes.ts
-  │    ├── userRoutes.ts
-  │    └── authRoutes.ts
-  ├── middlewares/
-  │    ├── auth.ts
-  │    ├── allowedTo.ts
-  │    └── multer.ts
-  ├── validators/
-  │    ├── productValidators.ts
-  │    ├── userValidators.ts
-  │    └── authValidators.ts
-  ├── utils/
-  │    ├── appError.ts
-  │    ├── folderHandler.ts
-  │    └── response.ts
-  ├── app.ts
-  ├── index.ts
-  ├── config.ts
-  ├── auth.ts
-  ├── .env
-  ├── node_modules/
-  ├── package.json
-  ├── tsconfig.json
-  ├── tslint.json
-  └──
-
 **Controllers:**
 
 1. `productController.ts`: Handles HTTP requests and responses related to products.
